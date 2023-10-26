@@ -1,8 +1,8 @@
+import React from 'react';
 import { AbstractView } from "@tokenscript/token-negotiator";
 import {
   sendAddGoerliCollection
 } from '../utils';
-import { OnChainTokenConfig } from "@tokenscript/token-negotiator/dist/client/interface";
 
 export class CustomMainView extends AbstractView {
   constructor(client: any, popup: any, viewContainer: any, params: any) {
@@ -71,3 +71,19 @@ export class CustomMainView extends AbstractView {
     });
   }
 }
+
+
+// Work around to an issue with version of Gatsby - requirement to export a react component.
+class DummyComponent extends React.Component {
+  constructor(props: any) {
+    super(props);
+  }
+  render() {
+    return (`
+      <div></div>
+    `);
+  }
+}
+
+export default DummyComponent;
+

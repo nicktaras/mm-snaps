@@ -22,6 +22,7 @@ import { defaultSnapOrigin } from '../config';
 import { Client } from "@tokenscript/token-negotiator";
 import { CustomMainView } from "./custom-tn-main-view";
 import "./custom-tn-theme.css";
+import abi from './abis/erc721-abi.json';
 
 const Container = styled.div`
   display: flex;
@@ -110,6 +111,8 @@ const ErrorMessage = styled.div`
 const Index = () => {
   const [state, dispatch] = useContext(MetaMaskContext);
   const [tokenImages, setTokenImages] = useState([]);
+  const [declined, setDeclined] = useState(false);
+  const [acceptedTKNConnection, setAcceptedTKNConnection] = useState(false);
   const isMetaMaskReady = isLocalSnap(defaultSnapOrigin)
     ? state.isFlask
     : state.snapsDetected;
@@ -128,6 +131,21 @@ const Index = () => {
       dispatch({ type: MetamaskActions.SetError, payload: e });
     }
   };
+
+  const mint = async () => {
+
+    try {
+    const provider = new _ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const contract = new _ethers.Contract('0xc361201E5B1005cCDE47B32F223BC145DE393F62', abi, signer);
+    const tx = await contract.safeMint('0x96B40b641601CdD7B468C8fE90217B922209cA82', '');
+    // await tx.wait();
+    } catch (err) {
+      setDeclined(true)
+      return true;
+    }
+    
+  }
 
   const initialiseTokenNegotiatorClick = async () => {
     try {
@@ -180,6 +198,7 @@ const Index = () => {
           }
           updateTokenImages(_tokenImages);
         });
+        setAcceptedTKNConnection(true);
       } else {
         sendDeclined();
       }
@@ -269,8 +288,23 @@ const Index = () => {
             !shouldDisplayReconnectButton(state.installedSnap)
           }
         />
+
         <div className="overlay-tn"></div>
 
+        { acceptedTKNConnection &&
+          <div style={{ width: '100%' }}>
+            <MediaCard>
+              <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                <p style={{ textAlign: 'center', margin: "20px" }}>Special Edition WoW Smart Token</p>
+                <button style={{ height: 'fit-content', borderRadius: '8px', width: '110px' }} onClick={() => { mint() }}>Mint</button>
+                <div>
+                  { declined ? <p>user declined transaction</p> : '' }
+                </div> 
+              </div>
+            </MediaCard>
+          </div>
+        }
+                
         { tokenImages.length > 0 &&
           <div style={{ width: '100%' }}>
             <p style={{ textAlign: 'center', margin: '24px 0 18px 0' }}>Your Goerli NFT's</p>

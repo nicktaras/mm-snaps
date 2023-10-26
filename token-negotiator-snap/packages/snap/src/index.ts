@@ -1,5 +1,58 @@
+
 import { OnRpcRequestHandler, OnCronjobHandler, OnTransactionHandler } from '@metamask/snaps-types';
-import { divider, panel, text } from '@metamask/snaps-ui';
+import { heading, divider, panel, text } from '@metamask/snaps-ui';
+
+// Handle outgoing transactions.
+export const onTransaction: OnTransactionHandler = async ({ transaction, transactionOrigin, chainId }) => {
+
+  // Use the window.ethereum global provider to fetch the gas price.
+  // @ts-ignore
+  const currentGasPrice = window.ethereum ? await window.ethereum.request({
+    method: 'eth_gasPrice',
+  }) : undefined;
+
+  // Get fields from the transaction object.
+  const transactionGas = parseInt(transaction.gas as string, 16);
+  const currentGasPriceInWei = parseInt(currentGasPrice ?? '', 16);
+  const maxFeePerGasInWei = parseInt(transaction.maxFeePerGas as string, 16);
+  const maxPriorityFeePerGasInWei = parseInt(
+    transaction.maxPriorityFeePerGas as string,
+    16,
+  );
+
+  // Calculate gas fees the user would pay.
+  const gasFees = Math.min(
+    maxFeePerGasInWei * transactionGas,
+    (currentGasPriceInWei + maxPriorityFeePerGasInWei) * transactionGas,
+  );
+
+  // Calculate gas fees as percentage of transaction.
+  const transactionValueInWei = parseInt(transaction.value as string, 16);
+  const gasFeesPercentage = (gasFees / (gasFees + transactionValueInWei)) * 100;
+
+  // Display percentage of gas fees in the transaction insights UI.
+  return {
+    content: panel([
+      heading('Transaction Insights'),
+      text('Purchase of an ERC5169 Smart Token from the WoW Collection'),
+      divider(),
+      text(
+        `Users are required to pay **${gasFeesPercentage.toFixed(
+          2,
+        )}%** in gas fees for this transaction.`,
+      ),
+      text(`- ChainID ${chainId}`),
+      text(`- Transaction request origin ${transactionOrigin}`),
+      divider(),
+      text('Token Actions:'),
+      text('VIP Access to Sandbox 🚀'),
+      text('VIP Access to Wow Chat 💬'),
+      text('Level Up with accessories 👗 and skills 🏄‍♀️ with BrandExtender'),
+      divider(),
+      text('Unleash your Smart Token: https://smartlayer.network/'),
+    ]),
+  }
+};
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -31,9 +84,10 @@ export const onRpcRequest: OnRpcRequestHandler = ({ origin, request }) => {
         params: {
           type: 'confirmation',
           content: panel([
-            text(`Token Negotiator, **${origin}**!`),
+            heading(`Token Negotiator Connection`),
+            text(`Do you allow Token Negotiator to connect with this website **${origin}**!`),
             divider(),
-            text('Do you allow connection all tokens from inside this wallet to this website?'),
+            text(`Allows you to create a gallery from NFT collections and mint a Smart Token.`),
           ]),
         },
       });
